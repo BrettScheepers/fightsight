@@ -93,7 +93,7 @@ model User {
   analysisSessions  AnalysisSession[]
   fighterProfiles   FighterProfile[]
 
-  @@index([email], where: { deletedAt: null })
+  @@index([email])
   @@index([createdAt])
   @@map("users")
 }
@@ -129,7 +129,7 @@ model Video {
   user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   analysisSessions AnalysisSession[]
 
-  @@index([userId], where: { deletedAt: null })
+  @@index([userId])
   @@index([uploadStatus])
   @@index([createdAt])
   @@map("videos")
@@ -215,7 +215,7 @@ model FighterProfile {
   createdByUser     User?           @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
   sessionFighters   SessionFighter[]
 
-  @@index([name], where: { deletedAt: null })
+  @@index([name])
   @@index([createdByUserId])
   @@map("fighter_profiles")
 }

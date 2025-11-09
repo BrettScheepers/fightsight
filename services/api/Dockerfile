@@ -5,6 +5,9 @@ FROM node:18-alpine AS development
 
 WORKDIR /app
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 # Install dependencies
 COPY package*.json ./
 RUN npm install
@@ -14,8 +17,8 @@ COPY . .
 
 EXPOSE 3000
 
-# Generate Prisma Client and start dev server
-CMD sh -c "npm run db:generate && npm run dev"
+# Generate Prisma Client, push schema to database, and start dev server
+CMD sh -c "npm run db:generate && npx prisma db push --skip-generate && npm run dev"
 
 # Production build stage
 FROM node:18-alpine AS build
