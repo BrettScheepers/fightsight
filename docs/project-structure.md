@@ -159,6 +159,7 @@ fightsight/
 **Port**: 3000
 
 **Responsibilities**:
+
 - Main application API
 - Authentication & authorization
 - Video upload handling
@@ -169,6 +170,7 @@ fightsight/
 - WebSocket notifications
 
 **Key Dependencies**:
+
 - Express or Fastify (web framework)
 - Prisma (ORM)
 - Bull (job queue)
@@ -179,6 +181,7 @@ fightsight/
 - ffmpeg (video processing)
 
 **External Connections**:
+
 - PostgreSQL (database)
 - Redis (cache/queue)
 - CV Service (HTTP)
@@ -192,6 +195,7 @@ fightsight/
 **Port**: 8001 (mapped from internal 8000)
 
 **Responsibilities**:
+
 - Pose detection (MediaPipe)
 - Frame extraction from video
 - Motion analysis
@@ -200,6 +204,7 @@ fightsight/
 - Pre-filtering for LLM analysis
 
 **Key Dependencies**:
+
 - FastAPI (web framework)
 - MediaPipe (pose estimation)
 - OpenCV (video processing)
@@ -207,6 +212,7 @@ fightsight/
 - Uvicorn (ASGI server)
 
 **External Connections**:
+
 - None (stateless service)
 - Receives video frames via HTTP
 - Returns pose/motion data via HTTP
@@ -218,6 +224,7 @@ fightsight/
 **Port**: 3001 (mapped from internal 3000)
 
 **Responsibilities**:
+
 - User interface
 - Video upload with client-side clipping
 - Analysis result visualization
@@ -226,6 +233,7 @@ fightsight/
 - Report viewing
 
 **Key Dependencies**:
+
 - Next.js 14
 - React 18
 - TypeScript
@@ -235,6 +243,7 @@ fightsight/
 - video.js or similar (video player)
 
 **External Connections**:
+
 - API Service (HTTP & WebSocket)
 
 ---
@@ -244,6 +253,7 @@ fightsight/
 **Port**: None (background process)
 
 **Responsibilities**:
+
 - Process video analysis jobs from queue
 - Coordinate CV Service and LLM calls
 - Handle long-running tasks
@@ -261,6 +271,7 @@ fightsight/
 TypeScript type definitions shared across services.
 
 **Exports**:
+
 ```typescript
 // Strike types
 export interface StrikeEvent { ... }
@@ -284,6 +295,7 @@ export interface SessionMetadata { ... }
 Shared configuration and constants.
 
 **Exports**:
+
 ```typescript
 export const LLM_MODELS = { ... }
 export const STRIKE_TYPES = { ... }
@@ -334,6 +346,7 @@ export const OUTCOMES = { ... }
 **Purpose**: Primary data store
 
 **Stores**:
+
 - User accounts
 - Video metadata
 - Analysis sessions
@@ -349,16 +362,11 @@ export const OUTCOMES = { ... }
 **Purpose**: Cache & job queue
 
 **Uses**:
+
 - Job queue (Bull)
 - Session cache
 - Rate limiting
 - Temporary data
-
-### PgAdmin (Dev only)
-
-**Port**: 5050
-
-**Purpose**: Database administration UI
 
 ### Redis Commander (Dev only)
 
@@ -437,7 +445,6 @@ npm run dev
 # - Web UI: http://localhost:3001
 # - API: http://localhost:3000
 # - CV Service: http://localhost:8001
-# - PgAdmin: http://localhost:5050
 ```
 
 ### Working on Individual Services

@@ -39,17 +39,20 @@ fightsight/
 ### Initial Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourusername/fightsight.git
    cd fightsight
    ```
 
 2. **Copy environment file**
+
    ```bash
    cp .env.example .env
    ```
 
 3. **Add your API keys to `.env`**
+
    ```bash
    # Edit .env and add:
    ANTHROPIC_API_KEY=your_key_here
@@ -58,6 +61,7 @@ fightsight/
    ```
 
 4. **Run setup script**
+
    ```bash
    npm run setup
    ```
@@ -70,11 +74,13 @@ fightsight/
 ### Development Mode
 
 Start all services with hot-reload:
+
 ```bash
 npm run dev
 ```
 
 Build and start fresh:
+
 ```bash
 npm run dev:build
 ```
@@ -84,7 +90,6 @@ npm run dev:build
 - **Web UI**: http://localhost:3001
 - **API**: http://localhost:3000
 - **CV Service**: http://localhost:8001
-- **PgAdmin**: http://localhost:5050
 - **Redis Commander**: http://localhost:8081
 
 ### Individual Service Commands
@@ -162,7 +167,7 @@ npm run db:seed
 
 ### Access PostgreSQL
 
-Via PgAdmin at http://localhost:5050 or directly:
+Via PgAdmin/Datagrip at http://localhost:5050 or directly:
 
 ```bash
 docker exec -it fightsight-postgres psql -U fightsight -d fightsight
@@ -206,6 +211,7 @@ Target: **<$1-2 per video**
 ## Tech Stack Details
 
 ### Frontend Stack
+
 - Next.js 14 (App Router)
 - React 18
 - TypeScript
@@ -213,6 +219,7 @@ Target: **<$1-2 per video**
 - Shadcn/ui components
 
 ### Backend Stack
+
 - Node.js 18+
 - Express or Fastify
 - TypeScript
@@ -220,6 +227,7 @@ Target: **<$1-2 per video**
 - Bull Queue (Redis-based)
 
 ### CV Service Stack
+
 - Python 3.11+
 - FastAPI
 - MediaPipe
@@ -227,6 +235,7 @@ Target: **<$1-2 per video**
 - NumPy
 
 ### Infrastructure
+
 - Docker & Docker Compose
 - PostgreSQL 16
 - Redis 7
@@ -237,6 +246,7 @@ Target: **<$1-2 per video**
 See `.env.example` for all configuration options.
 
 Required for MVP:
+
 - `ANTHROPIC_API_KEY` - Primary LLM provider
 - `DATABASE_URL` - PostgreSQL connection
 - `REDIS_URL` - Redis connection
@@ -244,6 +254,7 @@ Required for MVP:
 ## Roadmap
 
 ### Phase 1 (Current - MVP)
+
 - [x] Project structure & infrastructure
 - [ ] Video upload & storage
 - [ ] CV service integration
@@ -252,6 +263,7 @@ Required for MVP:
 - [ ] Strike event database
 
 ### Phase 2 (Future)
+
 - [ ] Advanced metrics (velocity, force)
 - [ ] Self-hosted LLM option
 - [ ] Multi-sport support
