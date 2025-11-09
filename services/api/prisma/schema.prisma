@@ -1,0 +1,411 @@
+// FightSight Database Schema
+// Prisma Schema for PostgreSQL with UUID primary keys
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS (matching PostgreSQL custom types)
+// ============================================================================
+
+enum StanceType {
+  orthodox
+  southpaw
+  switch
+
+  @@map("stance_type")
+}
+
+enum StrikeCategory {
+  hand
+  kick
+  elbow
+  knee
+
+  @@map("strike_category")
+}
+
+enum TargetZone {
+  head
+  body
+  legs
+
+  @@map("target_zone")
+}
+
+enum StrikeOutcome {
+  landed_clean
+  partially_landed
+  blocked
+  slipped
+  parried
+  rolled
+  missed
+  countered
+
+  @@map("strike_outcome")
+}
+
+enum CombatSport {
+  boxing
+  kickboxing
+  muay_thai
+  mma
+  karate
+  taekwondo
+
+  @@map("combat_sport")
+}
+
+enum AnalysisStatus {
+  pending
+  processing
+  completed
+  failed
+
+  @@map("analysis_status")
+}
+
+// ============================================================================
+// USER MANAGEMENT
+// ============================================================================
+
+model User {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email           String    @unique @db.VarChar(255)
+  passwordHash    String    @map("password_hash") @db.VarChar(255)
+  fullName        String?   @map("full_name") @db.VarChar(255)
+  role            String    @default("user") @db.VarChar(50)
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  lastLoginAt     DateTime? @map("last_login_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  videos            Video[]
+  analysisSessions  AnalysisSession[]
+  fighterProfiles   FighterProfile[]
+
+  @@index([email], where: { deletedAt: null })
+  @@index([createdAt])
+  @@map("users")
+}
+
+// ============================================================================
+// VIDEO MANAGEMENT
+// ============================================================================
+
+model Video {
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+
+  // File Information
+  originalFilename String    @map("original_filename") @db.VarChar(255)
+  storagePath      String    @map("storage_path") @db.VarChar(500)
+  fileSizeBytes    BigInt    @map("file_size_bytes")
+  mimeType         String    @map("mime_type") @db.VarChar(100)
+
+  // Video Metadata
+  durationSeconds  Decimal   @map("duration_seconds") @db.Decimal(10, 2)
+  width            Int?
+  height           Int?
+  fps              Decimal?  @db.Decimal(6, 2)
+
+  // Processing Status
+  uploadStatus     String    @default("uploading") @map("upload_status") @db.VarChar(50)
+
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysisSessions AnalysisSession[]
+
+  @@index([userId], where: { deletedAt: null })
+  @@index([uploadStatus])
+  @@index([createdAt])
+  @@map("videos")
+}
+
+// ============================================================================
+// ANALYSIS SESSIONS
+// ============================================================================
+
+model AnalysisSession {
+  id                          String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  videoId                     String          @map("video_id") @db.Uuid
+  userId                      String          @map("user_id") @db.Uuid
+
+  // Session Configuration
+  sportType                   CombatSport     @map("sport_type")
+  roundCount                  Int             @default(1) @map("round_count")
+
+  // Processing Status
+  status                      AnalysisStatus  @default(pending)
+  progressPercentage          Int             @default(0) @map("progress_percentage")
+
+  // Processing Metadata
+  startedAt                   DateTime?       @map("started_at") @db.Timestamptz(6)
+  completedAt                 DateTime?       @map("completed_at") @db.Timestamptz(6)
+  failedAt                    DateTime?       @map("failed_at") @db.Timestamptz(6)
+  errorMessage                String?         @map("error_message") @db.Text
+
+  // Cost Tracking
+  totalCostUsd                Decimal?        @map("total_cost_usd") @db.Decimal(10, 4)
+  llmProvider                 String?         @map("llm_provider") @db.VarChar(50)
+  llmModel                    String?         @map("llm_model") @db.VarChar(100)
+  totalLlmApiCalls            Int             @default(0) @map("total_llm_api_calls")
+
+  // Processing Stats
+  totalFramesAnalyzed         Int?            @map("total_frames_analyzed")
+  totalStrikesDetected        Int?            @map("total_strikes_detected")
+  totalCombinationsDetected   Int?            @map("total_combinations_detected")
+  processingTimeSeconds       Int?            @map("processing_time_seconds")
+
+  createdAt                   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                   DateTime?       @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  video                       Video           @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user                        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionFighters             SessionFighter[]
+  strikeEvents                StrikeEvent[]
+  combinations                Combination[]
+  analysisReports             AnalysisReport[]
+
+  @@index([videoId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("analysis_sessions")
+}
+
+// ============================================================================
+// FIGHTER DATA
+// ============================================================================
+
+model FighterProfile {
+  id                String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdByUserId   String?         @map("created_by_user_id") @db.Uuid
+
+  // Fighter Information
+  name              String          @db.VarChar(255)
+  nickname          String?         @db.VarChar(255)
+  defaultStance     StanceType?     @map("default_stance")
+
+  // Optional Profile Data
+  weightClass       String?         @map("weight_class") @db.VarChar(100)
+  teamGym           String?         @map("team_gym") @db.VarChar(255)
+  notes             String?         @db.Text
+
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime?       @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  createdByUser     User?           @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  sessionFighters   SessionFighter[]
+
+  @@index([name], where: { deletedAt: null })
+  @@index([createdByUserId])
+  @@map("fighter_profiles")
+}
+
+model SessionFighter {
+  id                    String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  analysisSessionId     String          @map("analysis_session_id") @db.Uuid
+  fighterProfileId      String?         @map("fighter_profile_id") @db.Uuid
+
+  // Fighter Identification
+  fighterLabel          String          @map("fighter_label") @db.VarChar(50) // 'fighter_a', 'fighter_b'
+  cornerColor           String?         @map("corner_color") @db.VarChar(50)
+
+  // Session-Specific Data
+  displayName           String          @map("display_name") @db.VarChar(255)
+  stance                StanceType
+
+  // Calculated Stats (denormalized for performance)
+  totalStrikesThrown    Int             @default(0) @map("total_strikes_thrown")
+  totalStrikesLanded    Int             @default(0) @map("total_strikes_landed")
+  totalStrikesReceived  Int             @default(0) @map("total_strikes_received")
+
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  analysisSession       AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  fighterProfile        FighterProfile? @relation(fields: [fighterProfileId], references: [id], onDelete: SetNull)
+
+  strikeEventsAshrower StrikeEvent[]   @relation("ThrowerStrikeEvents")
+  strikeEventsAsReceiver StrikeEvent[] @relation("ReceiverStrikeEvents")
+  combinations          Combination[]
+
+  @@unique([analysisSessionId, fighterLabel], name: "unique_fighter_per_session")
+  @@index([analysisSessionId])
+  @@index([fighterProfileId])
+  @@map("session_fighters")
+}
+
+// ============================================================================
+// STRIKE EVENTS
+// ============================================================================
+
+model StrikeEvent {
+  id                        String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  analysisSessionId         String          @map("analysis_session_id") @db.Uuid
+
+  // Temporal Data
+  timestampSeconds          Decimal         @map("timestamp_seconds") @db.Decimal(10, 3)
+  frameNumber               Int             @map("frame_number")
+  roundNumber               Int             @default(1) @map("round_number")
+
+  // Fighter References
+  throwerId                 String          @map("thrower_id") @db.Uuid
+  receiverId                String          @map("receiver_id") @db.Uuid
+  throwerStance             StanceType      @map("thrower_stance")
+
+  // Strike Classification
+  strikeCategory            StrikeCategory  @map("strike_category")
+  technique                 String          @db.VarChar(100)
+  modifier                  String?         @db.VarChar(100)
+
+  // Target & Impact
+  targetZone                TargetZone      @map("target_zone")
+  outcome                   StrikeOutcome
+
+  // Contextual Data
+  range                     String?         @db.VarChar(50)
+  initiatedFrom             String?         @map("initiated_from") @db.VarChar(50)
+
+  // Combination Relationship
+  isPartOfCombination       Boolean         @default(false) @map("is_part_of_combination")
+  positionInCombination     Int?            @map("position_in_combination")
+
+  // Frame Reference
+  frameStoragePath          String?         @map("frame_storage_path") @db.VarChar(500)
+
+  // Confidence/Quality Metrics
+  detectionConfidence       Decimal?        @map("detection_confidence") @db.Decimal(4, 3)
+  classificationConfidence  Decimal?        @map("classification_confidence") @db.Decimal(4, 3)
+
+  createdAt                 DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  analysisSession           AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  thrower                   SessionFighter  @relation("ThrowerStrikeEvents", fields: [throwerId], references: [id], onDelete: Cascade)
+  receiver                  SessionFighter  @relation("ReceiverStrikeEvents", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  combinationStrikes        CombinationStrike[]
+
+  @@index([analysisSessionId])
+  @@index([throwerId])
+  @@index([receiverId])
+  @@index([timestampSeconds])
+  @@index([technique])
+  @@index([outcome])
+  @@index([targetZone])
+  @@index([analysisSessionId, timestampSeconds])
+  @@index([throwerId, technique])
+  @@map("strike_events")
+}
+
+// ============================================================================
+// COMBINATIONS
+// ============================================================================
+
+model Combination {
+  id                      String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  analysisSessionId       String                @map("analysis_session_id") @db.Uuid
+  throwerId               String                @map("thrower_id") @db.Uuid
+
+  // Temporal Bounds
+  startTimestampSeconds   Decimal               @map("start_timestamp_seconds") @db.Decimal(10, 3)
+  endTimestampSeconds     Decimal               @map("end_timestamp_seconds") @db.Decimal(10, 3)
+  durationSeconds         Decimal               @map("duration_seconds") @db.Decimal(6, 3)
+
+  // Combination Metadata
+  strikeCount             Int                   @map("strike_count")
+  combinationName         String?               @map("combination_name") @db.VarChar(255)
+
+  // Effectiveness
+  strikesLanded           Int                   @default(0) @map("strikes_landed")
+  strikesMissed           Int                   @default(0) @map("strikes_missed")
+
+  createdAt               DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  analysisSession         AnalysisSession       @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  thrower                 SessionFighter        @relation(fields: [throwerId], references: [id], onDelete: Cascade)
+
+  combinationStrikes      CombinationStrike[]
+
+  @@index([analysisSessionId])
+  @@index([throwerId])
+  @@index([startTimestampSeconds])
+  @@map("combinations")
+}
+
+model CombinationStrike {
+  id                  String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  combinationId       String       @map("combination_id") @db.Uuid
+  strikeEventId       String       @map("strike_event_id") @db.Uuid
+  positionInSequence  Int          @map("position_in_sequence")
+
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  combination         Combination  @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+  strikeEvent         StrikeEvent  @relation(fields: [strikeEventId], references: [id], onDelete: Cascade)
+
+  @@unique([combinationId, positionInSequence], name: "unique_strike_position")
+  @@unique([combinationId, strikeEventId], name: "unique_strike_in_combo")
+  @@index([combinationId])
+  @@index([strikeEventId])
+  @@map("combination_strikes")
+}
+
+// ============================================================================
+// ANALYSIS REPORTS
+// ============================================================================
+
+model AnalysisReport {
+  id                      String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  analysisSessionId       String          @map("analysis_session_id") @db.Uuid
+
+  // Report Content
+  reportType              String          @map("report_type") @db.VarChar(50)
+  reportFormat            String          @map("report_format") @db.VarChar(50)
+
+  // Report Data
+  contentJson             Json?           @map("content_json")
+  contentText             String?         @map("content_text") @db.Text
+
+  // Insights (LLM-generated)
+  keyInsights             String[]        @map("key_insights")
+  strengths               String[]
+  areasForImprovement     String[]        @map("areas_for_improvement")
+
+  // Metadata
+  generatedByLlmProvider  String?         @map("generated_by_llm_provider") @db.VarChar(50)
+  generatedByLlmModel     String?         @map("generated_by_llm_model") @db.VarChar(100)
+  generationCostUsd       Decimal?        @map("generation_cost_usd") @db.Decimal(8, 4)
+
+  createdAt               DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  analysisSession         AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+
+  @@index([analysisSessionId])
+  @@index([reportType])
+  @@map("analysis_reports")
+}

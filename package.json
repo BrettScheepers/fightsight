@@ -1,0 +1,47 @@
+{
+  "name": "fightsight",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Combat sport sparring video analysis platform",
+  "workspaces": [
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up",
+    "dev:build": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
+    "start": "docker-compose up",
+    "stop": "docker-compose down",
+    "clean": "docker-compose down -v",
+    "logs": "docker-compose logs -f",
+    "logs:api": "docker-compose logs -f api",
+    "logs:cv": "docker-compose logs -f cv-service",
+    "logs:web": "docker-compose logs -f web",
+    "logs:worker": "docker-compose logs -f worker",
+    "setup": "bash scripts/setup.sh",
+    "test": "bash scripts/test-all.sh",
+    "db:migrate": "cd services/api && npm run migrate",
+    "db:seed": "bash scripts/seed-db.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/fightsight"
+  },
+  "keywords": [
+    "combat-sports",
+    "video-analysis",
+    "computer-vision",
+    "ai",
+    "sparring"
+  ],
+  "author": "Brett",
+  "license": "MIT"
+}

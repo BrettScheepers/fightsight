@@ -1,0 +1,160 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: fightsight-postgres
+    environment:
+      POSTGRES_DB: fightsight
+      POSTGRES_USER: fightsight
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password_change_in_prod}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fightsight"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fightsight-network
+
+  # Redis - Job Queue & Caching
+  redis:
+    image: redis:7-alpine
+    container_name: fightsight-redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./infrastructure/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - fightsight-network
+
+  # Python Computer Vision Service
+  cv-service:
+    build:
+      context: ./services/cv-service
+      dockerfile: Dockerfile
+    container_name: fightsight-cv-service
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./services/cv-service:/app
+      - cv_temp:/tmp/cv-processing
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - fightsight-network
+    restart: unless-stopped
+
+  # Node.js Main API
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+    container_name: fightsight-api
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=postgresql://fightsight:${POSTGRES_PASSWORD:-dev_password_change_in_prod}@postgres:5432/fightsight
+      - REDIS_URL=redis://redis:6379
+      - CV_SERVICE_URL=http://cv-service:8000
+      - PORT=3000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./services/api:/app
+      - /app/node_modules
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      cv-service:
+        condition: service_started
+    networks:
+      - fightsight-network
+    restart: unless-stopped
+
+  # Next.js Web Frontend
+  web:
+    build:
+      context: ./services/web
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+    container_name: fightsight-web
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./services/web:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+    networks:
+      - fightsight-network
+    restart: unless-stopped
+
+  # Job Worker (for async processing)
+  worker:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+    container_name: fightsight-worker
+    command: npm run worker
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=postgresql://fightsight:${POSTGRES_PASSWORD:-dev_password_change_in_prod}@postgres:5432/fightsight
+      - REDIS_URL=redis://redis:6379
+      - CV_SERVICE_URL=http://cv-service:8000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    volumes:
+      - ./services/api:/app
+      - /app/node_modules
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      cv-service:
+        condition: service_started
+    networks:
+      - fightsight-network
+    restart: unless-stopped
+
+networks:
+  fightsight-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads:
+  cv_temp:
