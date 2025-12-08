@@ -2,6 +2,8 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import storageRoutes from './routes/storage.routes';
+import videoRoutes from './routes/video.routes';
 
 // Load environment variables
 dotenv.config();
@@ -14,11 +16,12 @@ app.use(helmet());
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3001'
 }));
-app.use(express.json());
+app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.raw({ type: 'video/*', limit: '500mb' }));
 
 // Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     service: 'fightsight-api',
@@ -28,7 +31,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // API info endpoint
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
   res.json({
     name: 'FightSight API',
     version: '0.1.0',
@@ -39,6 +42,10 @@ app.get('/', (req: Request, res: Response) => {
     }
   });
 });
+
+// Routes
+app.use('/api/storage', storageRoutes);
+app.use('/api/videos', videoRoutes);
 
 // Start server
 app.listen(PORT, () => {
