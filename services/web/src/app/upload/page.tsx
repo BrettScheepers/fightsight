@@ -42,9 +42,9 @@ export default function UploadPage() {
           )}
         </div>
 
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="font-bold text-blue-900 mb-2">Supported Formats</h3>
-          <ul className="text-sm text-blue-800 space-y-1">
+        <div className="mt-8 bg-red-50 border border-red-200 rounded-lg p-6">
+          <h3 className="font-bold text-red-900 mb-2">Supported Formats</h3>
+          <ul className="text-sm text-red-800 space-y-1">
             <li>• MP4, MOV, WEBM, AVI</li>
             <li>• Maximum file size: 500MB</li>
             <li>• Recommended: 720p or higher resolution</li>

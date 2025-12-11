@@ -1,41 +1,42 @@
+import Link from 'next/link';
+
 export default function Home() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
   return (
-    <main style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontFamily: 'system-ui, sans-serif',
-      padding: '2rem'
-    }}>
-      <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>
-        🥊 FightSight
-      </h1>
-      <p style={{ fontSize: '1.25rem', color: '#666', marginBottom: '2rem' }}>
-        Combat Sport Sparring Video Analysis Platform
-      </p>
+    <main className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
+      <div className="max-w-2xl mx-auto text-center space-y-8">
+        <div className="space-y-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
+            AI-Powered Sparring Analysis
+          </h1>
+          <p className="text-xl text-gray-600">
+            Upload your combat sports video and get instant feedback on strikes, technique, and performance
+          </p>
+        </div>
 
-      <div style={{
-        background: '#f5f5f5',
-        padding: '2rem',
-        borderRadius: '8px',
-        maxWidth: '600px'
-      }}>
-        <h2 style={{ marginTop: 0 }}>Status</h2>
-        <ul style={{ lineHeight: '2' }}>
-          <li>✅ Web UI - Running</li>
-          <li>✅ API - <a href={`${apiUrl}/health`} target="_blank" rel="noopener noreferrer">Check Health</a></li>
-          <li>✅ CV Service - Ready</li>
-          <li>✅ Database - Connected</li>
-        </ul>
+        <Link
+          href="/upload"
+          className="inline-block bg-red-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-red-700 transition-colors"
+        >
+          Upload Your First Video
+        </Link>
 
-        <p style={{ marginTop: '2rem', fontSize: '0.9rem', color: '#666' }}>
-          Version: 0.1.0 (Development)
-        </p>
+        <div className="pt-8">
+          <ul className="space-y-3 text-left max-w-md mx-auto text-gray-700">
+            <li className="flex items-center gap-2">
+              <span className="text-green-600">✓</span>
+              <span>Detect strikes automatically</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-green-600">✓</span>
+              <span>Track performance metrics</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-green-600">✓</span>
+              <span>Get actionable feedback</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </main>
-  )
+  );
 }

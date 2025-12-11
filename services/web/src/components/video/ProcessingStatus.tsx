@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getVideoStatus } from '@/lib/upload-client';
 
 interface ProcessingStatusProps {
@@ -8,6 +9,7 @@ interface ProcessingStatusProps {
 }
 
 export function ProcessingStatus({ videoId }: ProcessingStatusProps) {
+  const router = useRouter();
   const [status, setStatus] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,10 +19,9 @@ export function ProcessingStatus({ videoId }: ProcessingStatusProps) {
         const statusData = await getVideoStatus(videoId);
         setStatus(statusData);
 
-        // If completed, redirect to results page (you can customize this)
+        // If completed, redirect to results page
         if (statusData.analysisStatus === 'completed') {
-          // TODO: Redirect to results page
-          console.log('Analysis complete!', statusData);
+          router.push(`/results/${videoId}`);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to fetch status';
@@ -64,7 +65,7 @@ export function ProcessingStatus({ videoId }: ProcessingStatusProps) {
       case 'failed':
         return 'text-red-600';
       case 'processing':
-        return 'text-blue-600';
+        return 'text-red-600';
       default:
         return 'text-gray-600';
     }
@@ -100,7 +101,7 @@ export function ProcessingStatus({ videoId }: ProcessingStatusProps) {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-red-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${status.progressPercentage}%` }}
             />
           </div>

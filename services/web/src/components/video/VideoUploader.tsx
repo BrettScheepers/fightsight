@@ -103,7 +103,7 @@ export function VideoUploader({ onUploadComplete }: VideoUploaderProps) {
           </div>
           <button
             onClick={handleUpload}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition"
+            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition"
           >
             Upload and Analyze
           </button>
@@ -118,7 +118,7 @@ export function VideoUploader({ onUploadComplete }: VideoUploaderProps) {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-red-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
