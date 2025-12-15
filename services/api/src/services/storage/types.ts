@@ -73,4 +73,11 @@ export interface StorageProvider {
    * @returns Array of file names
    */
   list(prefix?: string): Promise<string[]>;
+
+  /**
+   * Get the local file path (for local storage streaming)
+   * @param fileName - Name of file
+   * @returns Local file system path
+   */
+  getFilePath(fileName: string): Promise<string>;
 }

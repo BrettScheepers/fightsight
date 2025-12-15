@@ -175,8 +175,23 @@ export class VideoController {
             include: {
               sessionFighters: true,
               strikeEvents: {
+                include: {
+                  thrower: {
+                    select: {
+                      id: true,
+                      displayName: true,
+                      fighterLabel: true,
+                    },
+                  },
+                  receiver: {
+                    select: {
+                      id: true,
+                      displayName: true,
+                      fighterLabel: true,
+                    },
+                  },
+                },
                 orderBy: { timestampSeconds: 'asc' },
-                take: 100, // Limit for performance
               },
               combinations: {
                 orderBy: { startTimestampSeconds: 'asc' },
@@ -209,6 +224,12 @@ export class VideoController {
         success: true,
         data: {
           videoId: video.id,
+          video: {
+            id: video.id,
+            originalFilename: video.originalFilename,
+            storagePath: video.storagePath,
+            durationSeconds: video.durationSeconds,
+          },
           analysisSession: latestSession,
         },
       });

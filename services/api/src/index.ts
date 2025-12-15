@@ -12,9 +12,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3001'
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
+  credentials: true,
+  exposedHeaders: ['Content-Range', 'Accept-Ranges', 'Content-Length'],
 }));
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ extended: true }));

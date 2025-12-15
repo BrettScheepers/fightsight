@@ -84,7 +84,7 @@ export class LocalStorage implements StorageProvider {
       throw new Error('Invalid or expired upload token');
     }
 
-    const filePath = this.getFilePath(fileName);
+    const filePath = this.getFilePathSync(fileName);
     await this.ensureDirectoryExists(path.dirname(filePath));
     await fs.writeFile(filePath, fileBuffer);
 
@@ -95,7 +95,7 @@ export class LocalStorage implements StorageProvider {
   }
 
   async download(fileName: string): Promise<Buffer> {
-    const filePath = this.getFilePath(fileName);
+    const filePath = this.getFilePathSync(fileName);
 
     try {
       return await fs.readFile(filePath);
@@ -112,7 +112,7 @@ export class LocalStorage implements StorageProvider {
   }
 
   async delete(fileName: string): Promise<void> {
-    const filePath = this.getFilePath(fileName);
+    const filePath = this.getFilePathSync(fileName);
 
     try {
       await fs.unlink(filePath);
@@ -126,7 +126,7 @@ export class LocalStorage implements StorageProvider {
   }
 
   async exists(fileName: string): Promise<boolean> {
-    const filePath = this.getFilePath(fileName);
+    const filePath = this.getFilePathSync(fileName);
 
     try {
       await fs.access(filePath);
@@ -147,10 +147,17 @@ export class LocalStorage implements StorageProvider {
   }
 
   /**
-   * Helper: Get absolute file path
+   * Helper: Get absolute file path (private, synchronous)
    */
-  private getFilePath(fileName: string): string {
+  private getFilePathSync(fileName: string): string {
     return path.join(this.uploadsDir, fileName);
+  }
+
+  /**
+   * Get absolute file path (public for streaming)
+   */
+  async getFilePath(fileName: string): Promise<string> {
+    return this.getFilePathSync(fileName);
   }
 
   /**
