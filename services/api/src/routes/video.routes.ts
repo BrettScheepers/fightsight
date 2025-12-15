@@ -4,6 +4,10 @@ import { VideoController } from '../controllers/video.controller';
 const router = Router();
 const controller = new VideoController();
 
+// Get recent videos
+// TODO: Add authenticate middleware when auth is implemented
+router.get('/recent', controller.getRecentVideos);
+
 // Create analysis job
 // TODO: Add authenticate middleware when auth is implemented
 router.post('/analyze', controller.createAnalysisJob);

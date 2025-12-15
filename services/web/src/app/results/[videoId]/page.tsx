@@ -209,6 +209,15 @@ export default function ResultsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Link href="/" className="hover:text-red-600 transition-colors">
+            Home
+          </Link>
+          <span>›</span>
+          <span className="text-gray-900 font-medium">Analysis Results</span>
+        </div>
+
         {/* Header */}
         <div className="text-center">
           <div className="text-6xl mb-4">✅</div>
@@ -223,7 +232,7 @@ export default function ResultsPage() {
             <div className="text-sm text-gray-600 mt-1">Total Strikes</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 text-center">
-            <div className="text-3xl font-bold text-blue-600">
+            <div className="text-3xl font-bold text-red-600">
               {formatTime(parseFloat(data.video.durationSeconds.toString()))}
             </div>
             <div className="text-sm text-gray-600 mt-1">Duration</div>
@@ -302,7 +311,7 @@ export default function ResultsPage() {
                       onClick={() => jumpToTimestamp(parseFloat(strike.timestampSeconds.toString()))}
                     >
                       {/* Timestamp */}
-                      <div className="font-mono text-xs text-blue-600 flex items-center">
+                      <div className="font-mono text-xs text-gray-500 flex items-center">
                         {formatTime(parseFloat(strike.timestampSeconds.toString()))}
                       </div>
 

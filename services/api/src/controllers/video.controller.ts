@@ -43,6 +43,51 @@ export class VideoController {
   }
 
   /**
+   * Get recent videos with their analysis status
+   */
+  getRecentVideos = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // TODO: Get userId from authenticated request
+      const userId = await this.ensureTestUser();
+
+      const videos = await prisma.video.findMany({
+        where: {
+          userId,
+          deletedAt: null,
+        },
+        include: {
+          analysisSessions: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: {
+              status: true,
+              completedAt: true,
+              totalStrikesDetected: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      });
+
+      // Convert BigInt fields to strings for JSON serialization
+      const serializedVideos = videos.map((video) => ({
+        ...video,
+        fileSizeBytes: video.fileSizeBytes.toString(),
+      }));
+
+      res.json({
+        success: true,
+        data: serializedVideos,
+      });
+    } catch (error) {
+      console.error('Error fetching recent videos:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: message });
+    }
+  };
+
+  /**
    * Create an analysis job for an uploaded video
    */
   createAnalysisJob = async (req: Request, res: Response): Promise<void> => {
