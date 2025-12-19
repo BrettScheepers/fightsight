@@ -80,4 +80,11 @@ export interface StorageProvider {
    * @returns Local file system path
    */
   getFilePath(fileName: string): Promise<string>;
+
+  /**
+   * Download a file to a local path
+   * @param fileName - Name of file in storage
+   * @param localPath - Local file system path to save to
+   */
+  downloadToFile(fileName: string, localPath: string): Promise<void>;
 }

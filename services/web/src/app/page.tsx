@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { startAnalysis, deleteVideo } from '@/lib/upload-client';
 
 interface Video {
   id: string;
@@ -17,6 +18,8 @@ interface Video {
 export default function Home() {
   const [recentVideos, setRecentVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
+  const [analyzingVideos, setAnalyzingVideos] = useState<Set<string>>(new Set());
+  const [deletingVideos, setDeletingVideos] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchRecentVideos = async () => {
@@ -37,6 +40,59 @@ export default function Home() {
 
     fetchRecentVideos();
   }, []);
+
+  const handleStartAnalysis = async (videoId: string, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation
+    e.stopPropagation();
+
+    setAnalyzingVideos(prev => new Set(prev).add(videoId));
+
+    try {
+      await startAnalysis(videoId);
+      // Refresh videos list
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const response = await fetch(`${apiUrl}/api/videos/recent`);
+      if (response.ok) {
+        const result = await response.json();
+        setRecentVideos(result.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to start analysis:', error);
+      alert('Failed to start analysis. Please try again.');
+    } finally {
+      setAnalyzingVideos(prev => {
+        const next = new Set(prev);
+        next.delete(videoId);
+        return next;
+      });
+    }
+  };
+
+  const handleDeleteVideo = async (videoId: string, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation
+    e.stopPropagation();
+
+    if (!confirm('Are you sure you want to delete this video? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingVideos(prev => new Set(prev).add(videoId));
+
+    try {
+      await deleteVideo(videoId);
+      // Remove from local state
+      setRecentVideos(prev => prev.filter(v => v.id !== videoId));
+    } catch (error) {
+      console.error('Failed to delete video:', error);
+      alert('Failed to delete video. Please try again.');
+    } finally {
+      setDeletingVideos(prev => {
+        const next = new Set(prev);
+        next.delete(videoId);
+        return next;
+      });
+    }
+  };
 
   return (
     <main className="min-h-screen px-4 py-12 bg-gray-50">
@@ -87,45 +143,67 @@ export default function Home() {
               {recentVideos.map((video) => {
                 const latestSession = video.analysisSessions[0];
                 const isCompleted = latestSession?.status === 'completed';
+                const isPending = latestSession?.status === 'pending';
+                const isAnalyzing = analyzingVideos.has(video.id);
+                const isDeleting = deletingVideos.has(video.id);
 
                 return (
-                  <Link
-                    key={video.id}
-                    href={isCompleted ? `/results/${video.id}` : `/upload?videoId=${video.id}`}
-                    className="block p-4 border border-gray-200 rounded-lg hover:border-red-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{video.originalFilename}</h3>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                          <span>
-                            {new Date(video.createdAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </span>
-                          {isCompleted && latestSession && (
-                            <span className="text-green-600 font-medium">
-                              {latestSession.totalStrikesDetected} strikes detected
+                  <div key={video.id} className="p-4 border border-gray-200 rounded-lg hover:border-red-600 transition-colors">
+                    <Link
+                      href={isCompleted ? `/results/${video.id}` : `/upload?videoId=${video.id}`}
+                      className="block"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">{video.originalFilename}</h3>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                            <span>
+                              {new Date(video.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </span>
+                            {isCompleted && latestSession && (
+                              <span className="text-green-600 font-medium">
+                                {latestSession.totalStrikesDetected} strikes detected
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isCompleted ? (
+                            <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded">
+                              Completed
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-sm font-medium rounded">
+                              {latestSession?.status || 'Pending'}
                             </span>
                           )}
+                          <span className="text-gray-400">→</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {isCompleted ? (
-                          <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded">
-                            Completed
-                          </span>
-                        ) : (
-                          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-sm font-medium rounded">
-                            {latestSession?.status || 'Pending'}
-                          </span>
-                        )}
-                        <span className="text-gray-400">→</span>
-                      </div>
+                    </Link>
+                    <div className="flex gap-2 mt-3">
+                      {isPending && (
+                        <button
+                          onClick={(e) => handleStartAnalysis(video.id, e)}
+                          disabled={isAnalyzing || isDeleting}
+                          className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                          {isAnalyzing ? 'Starting...' : 'Start Analysis'}
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => handleDeleteVideo(video.id, e)}
+                        disabled={isDeleting}
+                        className="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-red-100 hover:text-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      >
+                        {isDeleting ? 'Deleting...' : 'Delete'}
+                      </button>
                     </div>
-                  </Link>
+                  </div>
                 );
               })}
             </div>

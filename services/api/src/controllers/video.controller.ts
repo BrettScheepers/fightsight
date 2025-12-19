@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { getStorage } from '../services/storage';
+import { AnalysisService } from '../services/analysis.service';
 
 const prisma = new PrismaClient();
+const analysisService = new AnalysisService();
 
 // Default test user ID for development (before auth is implemented)
 const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
@@ -45,7 +47,7 @@ export class VideoController {
   /**
    * Get recent videos with their analysis status
    */
-  getRecentVideos = async (req: Request, res: Response): Promise<void> => {
+  getRecentVideos = async (_req: Request, res: Response): Promise<void> => {
     try {
       // TODO: Get userId from authenticated request
       const userId = await this.ensureTestUser();
@@ -71,7 +73,7 @@ export class VideoController {
       });
 
       // Convert BigInt fields to strings for JSON serialization
-      const serializedVideos = videos.map((video) => ({
+      const serializedVideos = videos.map((video: any) => ({
         ...video,
         fileSizeBytes: video.fileSizeBytes.toString(),
       }));
@@ -134,8 +136,6 @@ export class VideoController {
         },
       });
 
-      // TODO: Add job to Redis queue for processing
-
       res.json({
         success: true,
         data: {
@@ -195,6 +195,120 @@ export class VideoController {
       });
     } catch (error) {
       console.error('Error getting video status:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: message });
+    }
+  };
+
+  /**
+   * Start analysis on a video
+   */
+  startAnalysis = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { videoId } = req.params;
+
+      if (!videoId) {
+        res.status(400).json({ error: 'videoId required' });
+        return;
+      }
+
+      // Get video with latest analysis session
+      const video = await prisma.video.findUnique({
+        where: { id: videoId },
+        include: {
+          analysisSessions: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      });
+
+      if (!video) {
+        res.status(404).json({ error: 'Video not found' });
+        return;
+      }
+
+      const latestSession = video.analysisSessions[0];
+
+      if (!latestSession) {
+        res.status(400).json({ error: 'No analysis session found for this video' });
+        return;
+      }
+
+      if (latestSession.status === 'processing') {
+        res.status(400).json({ error: 'Analysis already in progress' });
+        return;
+      }
+
+      if (latestSession.status === 'completed') {
+        res.status(400).json({ error: 'Analysis already completed' });
+        return;
+      }
+
+      // Start analysis (runs in background)
+      await analysisService.analyzeVideo(videoId, latestSession.id);
+
+      console.log(`[VideoController] Started analysis for video ${videoId}`);
+
+      res.json({
+        success: true,
+        data: {
+          videoId: video.id,
+          analysisSessionId: latestSession.id,
+          status: 'processing',
+          message: 'Analysis started',
+        },
+      });
+    } catch (error) {
+      console.error('Error starting analysis:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: message });
+    }
+  };
+
+  /**
+   * Delete a video and all associated data
+   */
+  deleteVideo = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { videoId } = req.params;
+
+      if (!videoId) {
+        res.status(400).json({ error: 'videoId required' });
+        return;
+      }
+
+      // Get video to retrieve storage path
+      const video = await prisma.video.findUnique({
+        where: { id: videoId },
+      });
+
+      if (!video) {
+        res.status(404).json({ error: 'Video not found' });
+        return;
+      }
+
+      // Delete from storage
+      try {
+        await this.storage.delete(video.storagePath);
+      } catch (error) {
+        console.warn(`Failed to delete file from storage: ${error}`);
+        // Continue with database deletion even if file deletion fails
+      }
+
+      // Delete from database (cascade will handle related records)
+      await prisma.video.delete({
+        where: { id: videoId },
+      });
+
+      console.log(`[VideoController] Deleted video ${videoId}`);
+
+      res.json({
+        success: true,
+        message: 'Video deleted successfully',
+      });
+    } catch (error) {
+      console.error('Error deleting video:', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ error: message });
     }

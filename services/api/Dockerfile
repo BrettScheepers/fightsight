@@ -5,8 +5,8 @@ FROM node:18-alpine AS development
 
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+# Install OpenSSL for Prisma and FFmpeg for video processing
+RUN apk add --no-cache openssl ffmpeg
 
 # Install dependencies
 COPY package*.json ./
@@ -38,6 +38,9 @@ FROM node:18-alpine AS production
 WORKDIR /app
 
 ENV NODE_ENV=production
+
+# Install FFmpeg for video processing
+RUN apk add --no-cache ffmpeg
 
 # Copy production dependencies and built files
 COPY --from=build /app/node_modules ./node_modules

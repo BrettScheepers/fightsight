@@ -51,14 +51,26 @@ fightsight/
    cp .env.example .env
    ```
 
-3. **Add your API keys to `.env`**
+3. **Configure LLM Provider**
 
+   **Option 1: Use Mock (No API Key Required)**
    ```bash
-   # Edit .env and add:
-   ANTHROPIC_API_KEY=your_key_here
-   OPENAI_API_KEY=your_key_here  # optional
-   GOOGLE_API_KEY=your_key_here  # optional
+   # .env is already set to mock by default
+   LLM_PROVIDER=mock
    ```
+
+   **Option 2: Use Gemini Free Tier (Recommended)**
+   ```bash
+   # Get free API key from: https://aistudio.google.com/app/apikey
+   # Update .env:
+   LLM_PROVIDER=gemini
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+
+   Free tier includes:
+   - 15 requests/minute
+   - 1,500 requests/day
+   - Perfect for testing and small videos
 
 4. **Run setup script**
 
@@ -175,10 +187,13 @@ docker exec -it fightsight-postgres psql -U fightsight -d fightsight
 
 ## Cost Optimization
 
-Target: **<$1-2 per video**
+**Free Tier Option (Gemini 1.5 Flash)**
+- 1,500 free requests/day
+- ~$0 for videos up to 12 minutes (at 2fps sampling)
+- Perfect for personal use and testing
 
-- MediaPipe pose detection: **Free** (open-source)
-- Claude 3.5 Sonnet: ~$1.30 per 4-minute video
+**Paid Option (Future)**
+- Target: <$1-2 per video
 - Frame sampling at 2fps reduces LLM calls
 - Parallel processing (10 concurrent) for speed
 
@@ -245,11 +260,15 @@ Target: **<$1-2 per video**
 
 See `.env.example` for all configuration options.
 
-Required for MVP:
+**For Testing (Mock Mode)**
+- No API keys required
+- Set `LLM_PROVIDER=mock` in `.env`
 
-- `ANTHROPIC_API_KEY` - Primary LLM provider
-- `DATABASE_URL` - PostgreSQL connection
-- `REDIS_URL` - Redis connection
+**For Real Analysis (Gemini Free Tier)**
+- `LLM_PROVIDER=gemini`
+- `GEMINI_API_KEY` - Get from https://aistudio.google.com/app/apikey
+- `DATABASE_URL` - PostgreSQL connection (auto-configured in Docker)
+- `REDIS_URL` - Redis connection (auto-configured in Docker)
 
 ## Roadmap
 
