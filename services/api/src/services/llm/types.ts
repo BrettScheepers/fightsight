@@ -15,10 +15,12 @@ export interface StrikeClassificationRequest {
 export interface StrikeClassificationResponse {
   strikeDetected: boolean;
   technique?: string;
+  strikeCategory?: 'hand' | 'kick' | 'elbow' | 'knee';
   thrower?: 'fighter_a' | 'fighter_b';
   receiver?: 'fighter_a' | 'fighter_b';
+  throwerStance?: 'orthodox' | 'southpaw' | 'switch';
   targetZone?: 'head' | 'body' | 'legs';
-  outcome?: 'landed_clean' | 'partially_landed' | 'blocked' | 'slipped' | 'missed';
+  outcome?: 'landed_clean' | 'partially_landed' | 'blocked' | 'slipped' | 'parried' | 'rolled' | 'missed' | 'countered';
   confidence?: number;
 }
 

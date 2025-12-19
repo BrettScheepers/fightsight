@@ -24,7 +24,7 @@ export class MockGeminiService implements ILLMService {
     'straight',
   ];
 
-  private readonly outcomes = [
+  private readonly outcomes: Array<'landed_clean' | 'partially_landed' | 'blocked' | 'slipped' | 'missed'> = [
     'landed_clean',
     'partially_landed',
     'blocked',
@@ -76,7 +76,7 @@ export class MockGeminiService implements ILLMService {
    * Classify a strike in a video frame (MOCK)
    */
   async classifyStrike(
-    request: StrikeClassificationRequest
+    _request: StrikeClassificationRequest
   ): Promise<StrikeClassificationResponse> {
     // Simulate API call latency (100-300ms)
     await this.delay(100 + Math.random() * 200);
@@ -90,8 +90,13 @@ export class MockGeminiService implements ILLMService {
 
     // Generate realistic strike classification
     const technique = this.randomItem(this.techniques);
+    const strikeCategory: 'hand' | 'kick' | 'elbow' | 'knee' =
+      technique.includes('kick') ? 'kick' :
+      technique.includes('elbow') ? 'elbow' :
+      technique.includes('knee') ? 'knee' : 'hand';
     const thrower = this.randomItem(this.fighters);
     const receiver = thrower === 'fighter_a' ? 'fighter_b' : 'fighter_a';
+    const throwerStance: 'orthodox' | 'southpaw' | 'switch' = Math.random() < 0.7 ? 'orthodox' : Math.random() < 0.5 ? 'southpaw' : 'switch';
     const targetZone = this.randomItem(this.targetZones);
     const outcome = this.randomItem(this.outcomes);
     const confidence = this.generateConfidence(outcome);
@@ -99,8 +104,10 @@ export class MockGeminiService implements ILLMService {
     return {
       strikeDetected: true,
       technique,
+      strikeCategory,
       thrower,
       receiver,
+      throwerStance,
       targetZone,
       outcome,
       confidence,
@@ -111,12 +118,12 @@ export class MockGeminiService implements ILLMService {
    * Generate analysis report from aggregated data (MOCK)
    */
   async generateReport(
-    request: ReportGenerationRequest
+    _request: ReportGenerationRequest
   ): Promise<ReportGenerationResponse> {
     // Simulate API call latency (500-1000ms for longer generation)
     await this.delay(500 + Math.random() * 500);
 
-    const { strikes, fighters, sportType } = request;
+    const { strikes, fighters, sportType } = _request;
 
     // Calculate basic stats for report generation
     const totalStrikes = strikes.length;
