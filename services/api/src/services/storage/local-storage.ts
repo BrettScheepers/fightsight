@@ -161,6 +161,23 @@ export class LocalStorage implements StorageProvider {
   }
 
   /**
+   * Download file to local path (for processing)
+   */
+  async downloadToFile(fileName: string, localPath: string): Promise<void> {
+    const sourcePath = this.getFilePathSync(fileName);
+
+    try {
+      // For local storage, we can just copy the file
+      await fs.copyFile(sourcePath, localPath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new Error(`File not found: ${fileName}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Helper: Sanitize filename to prevent directory traversal
    */
   private sanitizeFileName(fileName: string): string {

@@ -27,25 +27,39 @@ Your task is to classify any strike visible in this frame. Analyze the image and
 {
   "strikeDetected": boolean,
   "technique": string | null,
+  "strikeCategory": "hand" | "kick" | "elbow" | "knee" | null,
   "thrower": "fighter_a" | "fighter_b" | null,
   "receiver": "fighter_a" | "fighter_b" | null,
+  "throwerStance": "orthodox" | "southpaw" | "switch" | null,
   "targetZone": "head" | "body" | "legs" | null,
-  "outcome": "landed_clean" | "partially_landed" | "blocked" | "slipped" | "missed" | null,
+  "outcome": "landed_clean" | "partially_landed" | "blocked" | "slipped" | "parried" | "rolled" | "missed" | "countered" | null,
   "confidence": number (0-1)
 }
 
 Guidelines:
 - strikeDetected: true if ANY strike is visible (throwing, landing, or in motion)
-- technique: Specific strike type (jab, cross, hook, uppercut, body_shot, etc.)
+- technique: Specific strike type (jab, cross, hook, uppercut, front_kick, roundhouse, etc.)
+- strikeCategory: Type of strike weapon used
+  * hand: Punches (jab, cross, hook, uppercut, etc.)
+  * kick: Kicks (front kick, roundhouse, side kick, etc.)
+  * elbow: Elbow strikes
+  * knee: Knee strikes
 - thrower: Which fighter is throwing the strike
 - receiver: Which fighter is receiving/defending against the strike
-- targetZone: Where the strike is aimed
+- throwerStance: The stance of the fighter throwing the strike
+  * orthodox: Left foot forward, right hand power side (most common for right-handed)
+  * southpaw: Right foot forward, left hand power side (most common for left-handed)
+  * switch: Fighter has switched stance from their usual
+- targetZone: Where the strike is aimed (ONLY use head, body, or legs - map neck/face to head, torso/chest to body)
 - outcome: What happened with the strike
   * landed_clean: Strike connected cleanly with target
   * partially_landed: Strike grazed or partially connected
-  * blocked: Strike was blocked by guard/defense
+  * blocked: Strike was blocked by guard/arms
   * slipped: Defender moved head/body to avoid
+  * parried: Strike was redirected by defender
+  * rolled: Defender rolled with the strike to minimize impact
   * missed: Strike completely missed target
+  * countered: Strike was met with a counter-strike
 - confidence: Your confidence in this classification (0.0-1.0)
 
 Important:

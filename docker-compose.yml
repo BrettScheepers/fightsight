@@ -74,9 +74,11 @@ services:
       - REDIS_URL=redis://redis:6379
       - CV_SERVICE_URL=http://cv-service:8000
       - PORT=3000
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     ports:
       - "3000:3000"
     volumes:
@@ -129,9 +131,11 @@ services:
       - DATABASE_URL=postgresql://fightsight:${POSTGRES_PASSWORD:-dev_password_change_in_prod}@postgres:5432/fightsight
       - REDIS_URL=redis://redis:6379
       - CV_SERVICE_URL=http://cv-service:8000
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - ./services/api:/app
       - /app/node_modules

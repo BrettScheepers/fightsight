@@ -142,6 +142,26 @@ export async function getVideoStatus(videoId: string): Promise<any> {
 }
 
 /**
+ * Start analysis on an uploaded video
+ */
+export async function startAnalysis(videoId: string): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/videos/${videoId}/analyze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(error.error || `Failed to start analysis: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
+/**
  * Get analysis results
  */
 export async function getAnalysisResults(videoId: string): Promise<any> {
@@ -159,4 +179,21 @@ export async function getAnalysisResults(videoId: string): Promise<any> {
 
   const data = await response.json();
   return data.data;
+}
+
+/**
+ * Delete a video and all associated data
+ */
+export async function deleteVideo(videoId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/videos/${videoId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(error.error || `Failed to delete video: ${response.statusText}`);
+  }
 }

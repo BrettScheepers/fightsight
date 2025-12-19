@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getVideoStatus } from '@/lib/upload-client';
+import { getVideoStatus, startAnalysis } from '@/lib/upload-client';
 
 interface ProcessingStatusProps {
   videoId: string;
@@ -12,6 +12,7 @@ export function ProcessingStatus({ videoId }: ProcessingStatusProps) {
   const router = useRouter();
   const [status, setStatus] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isStartingAnalysis, setIsStartingAnalysis] = useState(false);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -84,6 +85,23 @@ export function ProcessingStatus({ videoId }: ProcessingStatusProps) {
     }
   };
 
+  const handleStartAnalysis = async () => {
+    setIsStartingAnalysis(true);
+    setError(null);
+
+    try {
+      await startAnalysis(videoId);
+      // Refresh status immediately
+      const statusData = await getVideoStatus(videoId);
+      setStatus(statusData);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start analysis';
+      setError(message);
+    } finally {
+      setIsStartingAnalysis(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -92,6 +110,21 @@ export function ProcessingStatus({ videoId }: ProcessingStatusProps) {
           {status.analysisStatus.charAt(0).toUpperCase() + status.analysisStatus.slice(1)}
         </h2>
       </div>
+
+      {status.analysisStatus === 'pending' && (
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded text-center">
+            Video uploaded successfully! Click below to start analysis.
+          </div>
+          <button
+            onClick={handleStartAnalysis}
+            disabled={isStartingAnalysis}
+            className="w-full bg-red-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isStartingAnalysis ? 'Starting Analysis...' : 'Start Analysis'}
+          </button>
+        </div>
+      )}
 
       {status.analysisStatus === 'processing' && (
         <div className="space-y-2">
